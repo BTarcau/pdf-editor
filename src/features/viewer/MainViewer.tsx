@@ -4,6 +4,8 @@ import { PageSlot } from './PageSlot'
 
 /** Horizontal gray margin around a fitted page: the wrapper's px-4 on each side. */
 const PADDING_X = 32
+/** Vertical room around a fitted page: py-4 above and below plus the page-number label. */
+const PADDING_Y = 56
 const MAX_FIT_SCALE = 3
 /** After a programmatic scroll, ignore scroll-derived active-page updates briefly. */
 const SUPPRESS_MS = 250
@@ -15,13 +17,16 @@ export function MainViewer() {
   const setActiveFromScroll = useDocStore((s) => s.setActiveFromScroll)
   const containerRef = useRef<HTMLDivElement>(null)
   const suppressUntil = useRef(0)
-  const [containerWidth, setContainerWidth] = useState(0)
+  const [container, setContainer] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
     const observer = new ResizeObserver(([entry]) =>
-      setContainerWidth(entry?.contentRect.width ?? 0),
+      setContainer({
+        width: entry?.contentRect.width ?? 0,
+        height: entry?.contentRect.height ?? 0,
+      }),
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -76,10 +81,15 @@ export function MainViewer() {
   }
   // Fit width sizes each page on its own so every page fills the viewer with the same
   // gray margin on both sides, even when a document mixes page sizes.
-  const scaleFor = (i: number) =>
-    zoom === 'fit'
-      ? Math.min(MAX_FIT_SCALE, Math.max(0.1, (containerWidth - PADDING_X) / sizeOf(i).width))
-      : zoom
+  const scaleFor = (i: number) => {
+    if (typeof zoom === 'number') return zoom
+    const size = sizeOf(i)
+    const byWidth = (container.width - PADDING_X) / size.width
+    // 'page' also keeps the whole page (plus its number label) within the viewer height.
+    const fit =
+      zoom === 'page' ? Math.min(byWidth, (container.height - PADDING_Y) / size.height) : byWidth
+    return Math.min(MAX_FIT_SCALE, Math.max(0.1, fit))
+  }
 
   return (
     <div

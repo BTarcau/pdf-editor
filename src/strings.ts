@@ -14,6 +14,8 @@ export const t = {
   zoomIn: 'Zoom in',
   zoomOut: 'Zoom out',
   fitWidth: 'Fit width',
+  fitPage: 'Page',
+  zoomLevel: 'Zoom level',
   pages: 'Pages',
   page: (n: number) => `Page ${n}`,
   pageOf: (n: number, total: number) => `Page ${n} of ${total}`,

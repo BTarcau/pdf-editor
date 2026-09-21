@@ -213,3 +213,42 @@ test.describe('fit width', () => {
     for (const width of boxes) expect(width).toBeCloseTo(viewer!.width - 32, 0)
   })
 })
+
+test('the zoom menu offers fixed levels, Fit width and Page', async ({ page }) => {
+  await openPdf(page, 3) // 200 x 300 pt pages
+  const zoom = page.getByLabel('Zoom level')
+  const frame = page.locator('[data-page-id] [role=img]').first()
+
+  await expect(zoom.locator('option')).toHaveText([
+    '50%',
+    '75%',
+    '85%',
+    '100%',
+    'Fit width',
+    'Page',
+  ])
+  await expect(zoom).toHaveValue('fit')
+
+  await zoom.selectOption({ label: '100%' })
+  await expect.poll(async () => (await frame.boundingBox())?.width).toBeCloseTo(200, 0)
+  await zoom.selectOption({ label: '50%' })
+  await expect.poll(async () => (await frame.boundingBox())?.width).toBeCloseTo(100, 0)
+
+  // The +/- buttons step from the chosen level and show levels the menu doesn't preset.
+  await page.getByRole('button', { name: 'Zoom in' }).click()
+  await expect(zoom).toHaveValue('0.75')
+  await page.getByRole('button', { name: 'Zoom in' }).click()
+  await page.getByRole('button', { name: 'Zoom in' }).click()
+  await page.getByRole('button', { name: 'Zoom in' }).click()
+  await expect(zoom.locator('option:checked')).toHaveText('125%')
+
+  // Page: the whole page (and its number) fits without scrolling, whatever its shape.
+  await zoom.selectOption({ label: 'Page' })
+  const viewer = page
+    .locator('[data-page-id]')
+    .first()
+    .locator('xpath=ancestor::div[contains(@class,"overflow-auto")]')
+  await expect
+    .poll(async () => (await frame.boundingBox())?.height)
+    .toBeCloseTo(((await viewer.boundingBox())?.height ?? 0) - 56, 0)
+})

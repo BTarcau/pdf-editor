@@ -20,8 +20,14 @@ interface Props {
   canEdit: boolean
 }
 
+const ZOOM_PRESETS = [0.5, 0.75, 0.85, 1] as const
+
+const zoomValue = (zoom: Zoom): string => String(zoom)
+const parseZoom = (value: string): Zoom =>
+  value === 'fit' || value === 'page' ? value : Number(value)
+
 function stepZoom(zoom: Zoom, direction: 1 | -1): number {
-  const current = zoom === 'fit' ? 1 : zoom
+  const current = typeof zoom === 'number' ? zoom : 1
   if (direction === 1)
     return ZOOM_STEPS.find((z) => z > current + 0.001) ?? ZOOM_STEPS[ZOOM_STEPS.length - 1]!
   return [...ZOOM_STEPS].reverse().find((z) => z < current - 0.001) ?? ZOOM_STEPS[0]!
@@ -89,14 +95,25 @@ export function TopBar({ onToggleSidebar, onOpenFile, onDownload, downloading, c
         >
           <MinusIcon />
         </Button>
-        <button
-          type="button"
-          onClick={() => setZoom('fit')}
-          title={t.fitWidth}
-          className="min-w-14 rounded px-1 py-1 text-center text-xs tabular-nums hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-blue-500 dark:hover:bg-neutral-800"
+        <select
+          aria-label={t.zoomLevel}
+          title={t.zoomLevel}
+          value={zoomValue(zoom)}
+          onChange={(e) => setZoom(parseZoom(e.target.value))}
+          className="rounded border-0 bg-transparent py-1 pr-1 pl-1 text-xs tabular-nums hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-blue-500 dark:hover:bg-neutral-800"
         >
-          {zoom === 'fit' ? t.fitWidth : `${Math.round(zoom * 100)}%`}
-        </button>
+          {ZOOM_PRESETS.map((z) => (
+            <option key={z} value={z}>
+              {Math.round(z * 100)}%
+            </option>
+          ))}
+          <option value="fit">{t.fitWidth}</option>
+          <option value="page">{t.fitPage}</option>
+          {/* A level reached with +/- that isn't one of the presets. */}
+          {typeof zoom === 'number' && !ZOOM_PRESETS.some((z) => z === zoom) && (
+            <option value={zoom}>{Math.round(zoom * 100)}%</option>
+          )}
+        </select>
         <Button
           variant="ghost"
           onClick={() => setZoom(stepZoom(zoom, 1))}

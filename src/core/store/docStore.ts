@@ -14,9 +14,11 @@ import {
 } from '../model/doc'
 import type { DocState, Source } from '../model/types'
 
-export type Zoom = 'fit' | number
+/** 'fit' fits the page width, 'page' fits the whole page in view, a number is a fixed scale. */
+export type Zoom = 'fit' | 'page' | number
 
-export const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4] as const
+/** Steps for the +/- buttons. */
+export const ZOOM_STEPS = [0.25, 0.5, 0.75, 0.85, 1, 1.25, 1.5, 2, 3, 4] as const
 
 interface ScrollRequest {
   pageId: string
