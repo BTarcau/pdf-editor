@@ -117,17 +117,21 @@ export function toggleSelected(state: DocState, id: string): DocState {
   }
 }
 
-/** Selects every page between the anchor and `id` (inclusive), replacing the selection. */
+/**
+ * Selects every page between the anchor and `id` (inclusive), replacing the selection.
+ * The anchor is the last page clicked, or the page being viewed if none was.
+ */
 export function selectRange(state: DocState, id: string): DocState {
   const to = state.pages.findIndex((p) => p.id === id)
   if (to === -1) return state
-  const anchorIndex = state.pages.findIndex((p) => p.id === state.selectionAnchor)
+  const anchorId = state.selectionAnchor ?? state.activePageId
+  const anchorIndex = state.pages.findIndex((p) => p.id === anchorId)
   const from = anchorIndex === -1 ? to : anchorIndex
   const [lo, hi] = from <= to ? [from, to] : [to, from]
   return {
     ...state,
     selection: state.pages.slice(lo, hi + 1).map((p) => p.id),
-    selectionAnchor: state.selectionAnchor ?? id,
+    selectionAnchor: anchorId ?? id,
   }
 }
 

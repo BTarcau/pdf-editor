@@ -149,6 +149,13 @@ describe('doc model', () => {
       )
     })
 
+    it('ranges from the viewed page when nothing was clicked yet', () => {
+      const viewing = setActivePage(doc, doc.pages[1]!.id)
+      expect(selectRange(viewing, doc.pages[3]!.id).selection).toEqual(
+        doc.pages.slice(1, 4).map((p) => p.id),
+      )
+    })
+
     it('selects all and clears', () => {
       const all = selectAll(doc)
       expect(all.selection).toHaveLength(5)

@@ -78,6 +78,13 @@ export function Thumbnail({ page, number, size, selected, active, canEdit, scrol
         type="button"
         data-thumb-btn={page.id}
         onClick={onClick}
+        onContextMenu={(e) => {
+          // On macOS, Ctrl+click is reported as a right-click instead of a click.
+          if (e.ctrlKey && canEdit) {
+            e.preventDefault()
+            toggleSelected(page.id)
+          }
+        }}
         onKeyDown={onKeyDown}
         aria-label={t.page(number)}
         aria-current={active ? 'true' : undefined}

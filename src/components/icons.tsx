@@ -70,3 +70,8 @@ export const CheckIcon = () => (
     <path d="m5 12 5 5 9-10" />
   </Icon>
 )
+export const PinIcon = ({ filled }: { filled: boolean }) => (
+  <Icon fill={filled ? 'currentColor' : 'none'}>
+    <path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z" />
+  </Icon>
+)

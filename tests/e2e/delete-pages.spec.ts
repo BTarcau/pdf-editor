@@ -125,3 +125,72 @@ test('runs cleanly under the production Content-Security-Policy', async ({ page 
   await download(page)
   expect(problems).toEqual([])
 })
+
+test('ctrl/cmd-click and shift-click select multiple pages from the thumbnails', async ({
+  page,
+}) => {
+  await openPdf(page, 8)
+  const thumb = (n: number) => thumbs(page).nth(n - 1)
+  const checked = () => page.locator('aside input[type=checkbox]:checked')
+
+  await thumb(2).click({ modifiers: ['ControlOrMeta'] })
+  await thumb(4).click({ modifiers: ['ControlOrMeta'] })
+  await thumb(6).click({ modifiers: ['ControlOrMeta'] })
+  await expect(checked()).toHaveCount(3)
+  await thumb(4).click({ modifiers: ['ControlOrMeta'] })
+  await expect(checked()).toHaveCount(2)
+
+  // A plain click moves the range anchor; Shift-click then selects through it.
+  await thumb(3).click()
+  await thumb(6).click({ modifiers: ['Shift'] })
+  await expect(checked()).toHaveCount(4)
+  await expect(page.getByRole('button', { name: 'Delete 4 selected' })).toBeVisible()
+
+  await page.keyboard.press('Delete')
+  expect(await download(page)).toEqual([0, 1, 6, 7].map(pageWidth))
+})
+
+test.describe('narrow screens', () => {
+  test.use({ viewport: { width: 500, height: 800 } })
+
+  test('the page list drawer can be pinned, and multi-select does not close it', async ({
+    page,
+  }) => {
+    await openPdf(page, 6)
+    const sidebar = page.getByRole('complementary', { name: 'Pages' })
+    const menu = page.getByRole('button', { name: 'Toggle page list' })
+
+    // Unpinned: the drawer is off-screen until opened, and closes after picking a page.
+    await expect(sidebar).not.toBeInViewport()
+    await menu.click()
+    await expect(sidebar).toBeInViewport()
+    await thumbs(page).nth(2).click()
+    await expect(sidebar).not.toBeInViewport()
+
+    // Pinned: it stays docked while selecting several pages.
+    await menu.click()
+    await page.getByRole('button', { name: 'Pin page list open' }).click()
+    await expect(sidebar).toBeInViewport()
+    await thumbs(page)
+      .nth(1)
+      .click({ modifiers: ['ControlOrMeta'] })
+    await thumbs(page)
+      .nth(4)
+      .click({ modifiers: ['ControlOrMeta'] })
+    await expect(sidebar).toBeInViewport()
+    await expect(page.getByRole('button', { name: 'Delete 2 selected' })).toBeVisible()
+
+    // The pin is remembered.
+    await page.reload()
+    await page.getByTestId('file-input').setInputFiles({
+      name: 'sample.pdf',
+      mimeType: 'application/pdf',
+      buffer: makePdf(3),
+    })
+    await expect(sidebar).toBeInViewport()
+
+    // The top-bar button hides a pinned list again.
+    await menu.click()
+    await expect(sidebar).not.toBeInViewport()
+  })
+})

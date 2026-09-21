@@ -86,7 +86,7 @@ export const useDocStore = create<DocStore>((set, get) => {
     goToPage: (pageId) => {
       const { doc } = get()
       if (!doc) return
-      const next = setActivePage(doc, pageId)
+      const next = { ...setActivePage(doc, pageId), selectionAnchor: pageId }
       set({ doc: next, scrollRequest: { pageId, nonce: ++nonce } })
     },
     setActiveFromScroll: (pageId) => {

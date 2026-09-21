@@ -12,12 +12,13 @@ import { t } from '../strings'
 import { GlobalDropTarget } from './GlobalDropTarget'
 import { TopBar } from './TopBar'
 import { useShortcuts } from './useShortcuts'
+import { useSidebar } from './useSidebar'
 
 export function App() {
   const doc = useDocStore((s) => s.doc)
   const dirty = useDocStore((s) => s.dirty)
   const { busy, pending, openFile, submitPassword, cancelPassword } = useOpenPdf()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const sidebar = useSidebar()
   const [downloading, setDownloading] = useState(false)
 
   const canEdit = doc !== null && !Object.values(doc.sources).some((s) => s.encrypted)
@@ -52,7 +53,7 @@ export function App() {
       {doc ? (
         <>
           <TopBar
-            onToggleSidebar={() => setSidebarOpen((o) => !o)}
+            onToggleSidebar={sidebar.toggle}
             onOpenFile={openFile}
             onDownload={download}
             downloading={downloading}
@@ -67,7 +68,13 @@ export function App() {
             </p>
           )}
           <div className="flex min-h-0 flex-1">
-            <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} canEdit={canEdit} />
+            <Sidebar
+              open={sidebar.open}
+              pinned={sidebar.pinned}
+              onClose={sidebar.close}
+              onTogglePin={sidebar.togglePin}
+              canEdit={canEdit}
+            />
             <MainViewer />
           </div>
           <GlobalDropTarget onFile={openFile} />
