@@ -5,10 +5,13 @@ import {
   getDocument,
   type PDFDocumentProxy,
 } from 'pdfjs-dist'
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker'
 import type { PageSize, Rotation, SourceId } from '../model/types'
 
-GlobalWorkerOptions.workerSrc = workerUrl
+// Let Vite bundle and construct the worker (the documented pdf.js + Vite setup). Handing
+// pdf.js a bare node_modules URL is fragile in dev: if the URL can't be fetched, pdf.js
+// falls back to a "fake worker" and fails with a confusing dynamic-import error.
+GlobalWorkerOptions.workerPort = new PdfWorker()
 
 // Runtime assets are copied to /pdfjs by scripts/copy-pdfjs-assets.mjs and
 // served from our own origin (no CDN).

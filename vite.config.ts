@@ -16,6 +16,8 @@ function productionHeaders(): Record<string, string> {
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   worker: { format: 'es' },
+  // pdf.js ships its own worker and dynamic imports; pre-bundling it breaks them in dev.
+  optimizeDeps: { exclude: ['pdfjs-dist'] },
   preview: { headers: productionHeaders() },
   test: {
     include: ['src/**/*.test.ts', 'tests/unit/**/*.test.ts'],
