@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useDocStore } from '../../core/store/docStore'
 import { PageSlot } from './PageSlot'
 
+/** Horizontal gray margin around a fitted page: the wrapper's px-4 on each side. */
 const PADDING_X = 32
 const MAX_FIT_SCALE = 3
 /** After a programmatic scroll, ignore scroll-derived active-page updates briefly. */
@@ -73,10 +74,11 @@ export function MainViewer() {
       ? { width: size.height, height: size.width }
       : size
   }
-  const widest = Math.max(...doc.pages.map((_, i) => sizeOf(i).width))
-  const scale =
+  // Fit width sizes each page on its own so every page fills the viewer with the same
+  // gray margin on both sides, even when a document mixes page sizes.
+  const scaleFor = (i: number) =>
     zoom === 'fit'
-      ? Math.min(MAX_FIT_SCALE, Math.max(0.1, (containerWidth - PADDING_X) / widest))
+      ? Math.min(MAX_FIT_SCALE, Math.max(0.1, (containerWidth - PADDING_X) / sizeOf(i).width))
       : zoom
 
   return (
@@ -93,7 +95,7 @@ export function MainViewer() {
             number={i + 1}
             total={doc.pages.length}
             size={doc.sources[page.sourceId]!.pageSizes[page.sourcePageIndex]!}
-            scale={scale}
+            scale={scaleFor(i)}
             scrollRoot={containerRef}
           />
         ))}

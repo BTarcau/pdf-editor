@@ -194,3 +194,22 @@ test.describe('narrow screens', () => {
     await expect(sidebar).not.toBeInViewport()
   })
 })
+
+test.describe('fit width', () => {
+  test.use({ viewport: { width: 600, height: 800 } })
+
+  test('every page fills the viewer with the same side margin, even with mixed page sizes', async ({
+    page,
+  }) => {
+    await openPdf(page, 4) // pages are 200, 210, 220, 230 points wide
+    const frames = page.locator('[data-page-id] [role=img]')
+    await expect(frames).toHaveCount(4)
+    const viewer = await page
+      .locator('[data-page-id]')
+      .first()
+      .locator('xpath=ancestor::div[contains(@class,"overflow-auto")]')
+      .boundingBox()
+    const boxes = await frames.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width))
+    for (const width of boxes) expect(width).toBeCloseTo(viewer!.width - 32, 0)
+  })
+})
