@@ -17,7 +17,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   worker: { format: 'es' },
   // pdf.js ships its own worker and dynamic imports; pre-bundling it breaks them in dev.
-  optimizeDeps: { exclude: ['pdfjs-dist'] },
+  optimizeDeps: {
+    exclude: ['pdfjs-dist'],
+    // Only imported from a worker, so Vite would otherwise discover it lazily on the
+    // first download and re-optimize mid-session, which can break that worker load.
+    include: ['pdf-lib'],
+  },
   preview: { headers: productionHeaders() },
   test: {
     include: ['src/**/*.test.ts', 'tests/unit/**/*.test.ts'],

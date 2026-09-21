@@ -1,8 +1,13 @@
 import type { PageRef, Source, SourceId } from '../../core/model/types'
 import type { ExportRequest, ExportResponse } from './export.worker'
 
-/** Builds the edited PDF in a Web Worker so large files don't freeze the UI. */
-export function exportPdf(
+/**
+ * Builds the edited PDF in a Web Worker so large files don't freeze the UI.
+ * If the worker itself can't run (fails to load, crashes), falls back to
+ * building on the main thread so the user still gets their file, or at least
+ * a real error message instead of a generic one.
+ */
+export async function exportPdf(
   sources: Record<SourceId, Source>,
   pages: readonly PageRef[],
 ): Promise<Uint8Array> {
@@ -13,10 +18,22 @@ export function exportPdf(
     if (source) sourceBytes[id] = source.bytes
   }
 
+  try {
+    return await exportInWorker({ sourceBytes, pages: [...pages] })
+  } catch (err) {
+    if (!(err instanceof WorkerFailure)) throw err
+    console.warn('Export worker failed, building on the main thread:', err.message)
+    const { buildPdf } = await import('./buildPdf')
+    return buildPdf(sourceBytes, pages)
+  }
+}
+
+/** The worker could not run at all (as opposed to buildPdf reporting an error). */
+class WorkerFailure extends Error {}
+
+function exportInWorker(request: ExportRequest): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('./export.worker.ts', import.meta.url), {
-      type: 'module',
-    })
+    const worker = new Worker(new URL('./export.worker.ts', import.meta.url), { type: 'module' })
     worker.onmessage = (e: MessageEvent<ExportResponse>) => {
       worker.terminate()
       if (e.data.ok) resolve(e.data.bytes)
@@ -24,9 +41,14 @@ export function exportPdf(
     }
     worker.onerror = (e) => {
       worker.terminate()
-      reject(new Error(e.message || 'Export worker failed'))
+      reject(
+        new WorkerFailure(e.message || `Export worker failed to run (${e.filename || 'unknown'})`),
+      )
     }
-    const request: ExportRequest = { sourceBytes, pages: [...pages] }
+    worker.onmessageerror = () => {
+      worker.terminate()
+      reject(new WorkerFailure('Export worker sent an unreadable message'))
+    }
     worker.postMessage(request)
   })
 }
