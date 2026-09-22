@@ -41,7 +41,14 @@ The architecture is designed so later features are additive. Start with [docs/AR
 
 ## Deploying
 
-The build output (`dist/`) is fully static. [Cloudflare Pages](https://pages.cloudflare.com/) is the recommended host because it applies `public/_headers` (the CSP). Build command `npm run build`, output directory `dist`. GitHub Pages also works but cannot set security headers.
+The build output (`dist/`) is fully static. [Cloudflare Pages](https://pages.cloudflare.com/) is the recommended host because it applies `public/_headers` (the CSP).
+
+- Framework preset: **Vite** (or None)
+- Build command: `npm run build`
+- Build output directory: `dist`
+- Node version: **22** (set via `.nvmrc`, or the `NODE_VERSION` environment variable if Cloudflare doesn't pick it up automatically)
+
+GitHub Pages also works but cannot set security headers.
 
 ## Known limitations
 
